@@ -3,6 +3,7 @@
 # Designer version — no black header/table, improved sidebar, no accuracy score
 # ============================================================
 
+import datetime as dt
 import html
 import json
 import re
@@ -15,6 +16,7 @@ import folium
 import geopandas as gpd
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 from streamlit_folium import st_folium
 
 
@@ -23,7 +25,7 @@ from streamlit_folium import st_folium
 # ============================================================
 
 st.set_page_config(
-    page_title="Cebu City Dengue Forecasting App",
+    page_title="Dengue Risk Mapping and Early Warning System in Cebu City",
     page_icon="🦟",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -68,6 +70,10 @@ st.markdown(
         --panel: rgba(255, 255, 255, 0.72);
         --panel-strong: rgba(255, 255, 255, 0.88);
         --line: rgba(17, 24, 39, 0.10);
+    }
+
+    html {
+        scroll-behavior: smooth;
     }
 
     html, body, [class*="css"] {
@@ -352,14 +358,32 @@ st.markdown(
     }
 
     .chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         padding: .72rem 1rem;
         border-radius: 999px;
         background: rgba(255,255,255,.74);
         border: 1px solid rgba(255,255,255,.88);
-        color: #252733;
+        color: #252733 !important;
+        -webkit-text-fill-color: #252733 !important;
         font-weight: 850;
         font-size: .9rem;
         box-shadow: 0 12px 32px rgba(17, 24, 39, 0.06);
+        text-decoration: none !important;
+        cursor: pointer;
+        transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+
+    .chip:hover {
+        transform: translateY(-2px);
+        background: rgba(255,255,255,.92);
+        box-shadow: 0 18px 38px rgba(17, 24, 39, 0.10);
+    }
+
+    .chip:focus {
+        outline: 3px solid rgba(37, 99, 235, .18);
+        outline-offset: 3px;
     }
 
     /* ========================= CARDS + TABLES ========================= */
@@ -880,6 +904,769 @@ st.markdown(
         -webkit-text-fill-color: #111827 !important;
     }
 
+
+
+    /* ========================= RESEARCH STORY SECTIONS ========================= */
+
+    .story-section {
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(255, 255, 255, 0.88);
+        border-radius: 30px;
+        padding: 1.7rem 1.85rem;
+        margin: 1.1rem 0 1.25rem 0;
+        box-shadow: 0 20px 58px rgba(17, 24, 39, 0.07);
+    }
+
+    .story-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        border-radius: 999px;
+        padding: .42rem .72rem;
+        background: rgba(237, 233, 254, .78);
+        border: 1px solid rgba(17, 24, 39, .06);
+        color: #4c1d95 !important;
+        -webkit-text-fill-color: #4c1d95 !important;
+        font-size: .75rem;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        font-weight: 950;
+        margin-bottom: .85rem;
+    }
+
+    .story-title {
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        font-size: clamp(1.3rem, 2.1vw, 2rem);
+        line-height: 1.12;
+        letter-spacing: -.045em;
+        font-weight: 950;
+        margin-bottom: .7rem;
+    }
+
+    .story-body {
+        color: #374151 !important;
+        -webkit-text-fill-color: #374151 !important;
+        font-size: 1rem;
+        line-height: 1.72;
+        font-weight: 650;
+        max-width: 1080px;
+    }
+
+    .story-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .85rem;
+        margin-top: 1.05rem;
+    }
+
+    .story-tile {
+        position: relative;
+        overflow: hidden;
+        min-height: 152px;
+        background:
+            radial-gradient(circle at 95% 5%, rgba(109, 40, 217, .16), transparent 34%),
+            radial-gradient(circle at 5% 90%, rgba(20, 184, 166, .14), transparent 34%),
+            rgba(255, 255, 255, .84);
+        border: 1px solid rgba(17, 24, 39, .07);
+        border-radius: 24px;
+        padding: 1.1rem;
+        box-shadow: 0 16px 34px rgba(17, 24, 39, .055);
+    }
+
+    .story-tile:before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(135deg, rgba(255,255,255,.82), rgba(255,255,255,0));
+    }
+
+    .story-tile-icon {
+        position: relative;
+        z-index: 1;
+        width: 36px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        border-radius: 14px;
+        background: linear-gradient(135deg, rgba(254, 226, 226, .90), rgba(237, 233, 254, .88), rgba(220, 252, 231, .88));
+        border: 1px solid rgba(255,255,255,.92);
+        box-shadow: 0 10px 20px rgba(17,24,39,.07);
+        margin-bottom: .72rem;
+        font-size: 1rem;
+    }
+
+    .story-tile-value {
+        position: relative;
+        z-index: 1;
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        font-weight: 950;
+        font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+        letter-spacing: -.055em;
+        margin-bottom: .28rem;
+        line-height: 1;
+    }
+
+    .story-tile-note {
+        position: relative;
+        z-index: 1;
+        color: #4b5563 !important;
+        -webkit-text-fill-color: #4b5563 !important;
+        font-weight: 700;
+        font-size: .9rem;
+        line-height: 1.48;
+    }
+
+    .story-tile-source {
+        position: relative;
+        z-index: 1;
+        display: inline-flex;
+        margin-top: .72rem;
+        padding: .34rem .56rem;
+        border-radius: 999px;
+        background: rgba(255,255,255,.78);
+        border: 1px solid rgba(17,24,39,.07);
+        color: #374151 !important;
+        -webkit-text-fill-color: #374151 !important;
+        font-size: .74rem;
+        font-weight: 900;
+    }
+
+    .disclaimer-card {
+        margin-top: 1rem;
+        display: flex;
+        align-items: flex-start;
+        gap: .7rem;
+        padding: .9rem 1rem;
+        border-radius: 20px;
+        background: rgba(254, 243, 199, .72);
+        border: 1px solid rgba(245, 158, 11, .22);
+        color: #78350f !important;
+        -webkit-text-fill-color: #78350f !important;
+        font-weight: 800;
+        line-height: 1.55;
+        max-width: 960px;
+    }
+
+    .sidebar-disclaimer {
+        margin-top: .75rem;
+        padding: .78rem .85rem;
+        border-radius: 18px;
+        background: rgba(254, 243, 199, .72);
+        border: 1px solid rgba(245, 158, 11, .24);
+        color: #78350f !important;
+        -webkit-text-fill-color: #78350f !important;
+        font-size: .81rem;
+        line-height: 1.45;
+        font-weight: 800;
+    }
+
+    .iso-card {
+        background: rgba(255,255,255,.74);
+        border: 1px solid rgba(255,255,255,.9);
+        border-radius: 22px;
+        padding: .95rem 1rem;
+        box-shadow: 0 14px 34px rgba(17,24,39,0.055);
+        margin: 1rem 0;
+    }
+
+    .iso-result {
+        display: flex;
+        justify-content: space-between;
+        gap: .75rem;
+        align-items: center;
+        padding: .75rem .8rem;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(237,233,254,.85), rgba(220,252,231,.78));
+        border: 1px solid rgba(17,24,39,.06);
+        font-weight: 950;
+    }
+
+    .alert-guide-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: .7rem;
+        margin-top: .85rem;
+    }
+
+    .alert-guide-card {
+        border-radius: 20px;
+        padding: .92rem .9rem;
+        border: 1px solid rgba(17, 24, 39, .08);
+        box-shadow: 0 10px 24px rgba(17,24,39,.045);
+        min-height: 135px;
+    }
+
+    .alert-guide-title {
+        font-size: .9rem;
+        font-weight: 950;
+        margin-bottom: .45rem;
+    }
+
+    .alert-guide-text {
+        font-size: .82rem;
+        line-height: 1.45;
+        font-weight: 760;
+    }
+
+    .scroll-anchor {
+        scroll-margin-top: 92px;
+    }
+
+    .proponents-card {
+        background: rgba(255,255,255,.74);
+        border: 1px solid rgba(255,255,255,.88);
+        border-radius: 28px;
+        padding: 1.35rem 1.55rem;
+        margin-top: 1.2rem;
+        box-shadow: 0 18px 46px rgba(17,24,39,.06);
+    }
+
+    .proponents-name {
+        font-weight: 950;
+        letter-spacing: -.02em;
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+    }
+
+    .story-section {
+        scroll-margin-top: 96px;
+    }
+
+    .limitation-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .9rem;
+        margin-top: 1rem;
+    }
+
+    .limitation-card {
+        background: rgba(255,255,255,.82);
+        border: 1px solid rgba(17,24,39,.075);
+        border-radius: 24px;
+        padding: 1rem 1.05rem;
+        box-shadow: 0 14px 34px rgba(17,24,39,.055);
+    }
+
+    .limitation-card-title {
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        font-weight: 950;
+        font-size: 1rem;
+        letter-spacing: -.025em;
+        margin-bottom: .45rem;
+    }
+
+    .limitation-card-text {
+        color: #4b5563 !important;
+        -webkit-text-fill-color: #4b5563 !important;
+        font-weight: 680;
+        font-size: .92rem;
+        line-height: 1.55;
+    }
+
+    .reference-list {
+        display: grid;
+        gap: .65rem;
+        margin-top: 1rem;
+    }
+
+    .reference-link {
+        display: block;
+        padding: .88rem 1rem;
+        border-radius: 20px;
+        background: rgba(255,255,255,.82);
+        border: 1px solid rgba(17,24,39,.075);
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        text-decoration: none !important;
+        font-weight: 800;
+        box-shadow: 0 12px 28px rgba(17,24,39,.045);
+    }
+
+    .reference-link:hover {
+        background: rgba(255,255,255,.96);
+        transform: translateY(-1px);
+    }
+
+    .reference-small {
+        display: block;
+        margin-top: .25rem;
+        color: #6b7280 !important;
+        -webkit-text-fill-color: #6b7280 !important;
+        font-size: .82rem;
+        font-weight: 650;
+        line-height: 1.35;
+    }
+
+    div[data-baseweb="calendar"] *,
+    div[data-baseweb="calendar"] div,
+    div[data-baseweb="calendar"] button {
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+    }
+
+    div[data-baseweb="calendar"] [aria-disabled="true"] {
+        background: #f3f4f6 !important;
+        color: #9ca3af !important;
+        -webkit-text-fill-color: #9ca3af !important;
+    }
+
+
+
+    /* ========================= DATE PICKER READABILITY PATCH ========================= */
+
+    .stDateInput [data-baseweb="input"] > div,
+    section[data-testid="stSidebar"] .stDateInput [data-baseweb="input"] > div {
+        background: rgba(255, 255, 255, 0.96) !important;
+        border: 1px solid rgba(17, 24, 39, 0.14) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 10px 24px rgba(17,24,39,0.055) !important;
+    }
+
+    .stDateInput input,
+    section[data-testid="stSidebar"] .stDateInput input {
+        background: transparent !important;
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        caret-color: #111827 !important;
+        font-weight: 800 !important;
+    }
+
+    .stDateInput [data-baseweb="input"] > div:focus-within,
+    section[data-testid="stSidebar"] .stDateInput [data-baseweb="input"] > div:focus-within {
+        border-color: rgba(220, 38, 38, 0.55) !important;
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.10), 0 10px 24px rgba(17,24,39,0.055) !important;
+    }
+
+    div[data-baseweb="calendar"],
+    div[data-baseweb="calendar"] > div,
+    div[data-baseweb="calendar"] [role="grid"],
+    div[data-baseweb="calendar"] [role="row"],
+    div[data-baseweb="calendar"] [role="gridcell"] {
+        background: #ffffff !important;
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+    }
+
+    div[data-baseweb="calendar"] [role="gridcell"] > div,
+    div[data-baseweb="calendar"] [role="gridcell"] button,
+    div[data-baseweb="calendar"] button {
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+    }
+
+    div[data-baseweb="calendar"] [aria-disabled="true"],
+    div[data-baseweb="calendar"] [aria-disabled="true"] *,
+    div[data-baseweb="calendar"] [role="gridcell"][aria-disabled="true"],
+    div[data-baseweb="calendar"] [role="gridcell"][aria-disabled="true"] * {
+        background: #f9fafb !important;
+        color: #9ca3af !important;
+        -webkit-text-fill-color: #9ca3af !important;
+    }
+
+    div[data-baseweb="calendar"] [aria-selected="true"],
+    div[data-baseweb="calendar"] [aria-selected="true"] *,
+    div[data-baseweb="calendar"] button[aria-selected="true"],
+    div[data-baseweb="calendar"] button[aria-selected="true"] * {
+        background: #ef4444 !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+
+
+    /* Extra BaseWeb popover patch for Streamlit date calendars on dark-browser themes. */
+    div[data-baseweb="popover"] [role="grid"],
+    div[data-baseweb="popover"] [role="row"],
+    div[data-baseweb="popover"] [role="gridcell"],
+    div[data-baseweb="popover"] [role="gridcell"] > div {
+        background: #ffffff !important;
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+    }
+
+    div[data-baseweb="popover"] [role="gridcell"] button,
+    div[data-baseweb="popover"] [role="gridcell"] div,
+    div[data-baseweb="popover"] [role="button"] {
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+    }
+
+    div[data-baseweb="popover"] [aria-disabled="true"],
+    div[data-baseweb="popover"] [aria-disabled="true"] *,
+    div[data-baseweb="popover"] [role="gridcell"][aria-disabled="true"],
+    div[data-baseweb="popover"] [role="gridcell"][aria-disabled="true"] * {
+        background: #f9fafb !important;
+        color: #9ca3af !important;
+        -webkit-text-fill-color: #9ca3af !important;
+    }
+
+
+    /* ========================= ACCURACY CHECK SECTION ========================= */
+
+    .accuracy-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .85rem;
+        margin: 1rem 0 1.1rem 0;
+    }
+
+    .accuracy-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 122px;
+        background:
+            radial-gradient(circle at 92% 10%, rgba(109, 40, 217, .13), transparent 34%),
+            radial-gradient(circle at 8% 95%, rgba(20, 184, 166, .13), transparent 35%),
+            rgba(255, 255, 255, .82);
+        border: 1px solid rgba(17, 24, 39, .075);
+        border-radius: 24px;
+        padding: 1rem 1.05rem;
+        box-shadow: 0 16px 36px rgba(17, 24, 39, .055);
+    }
+
+    .accuracy-card.good {
+        background: radial-gradient(circle at 92% 10%, rgba(22, 163, 74, .17), transparent 34%), rgba(255,255,255,.84);
+    }
+
+    .accuracy-card.warn {
+        background: radial-gradient(circle at 92% 10%, rgba(245, 158, 11, .18), transparent 34%), rgba(255,255,255,.84);
+    }
+
+    .accuracy-card.bad {
+        background: radial-gradient(circle at 92% 10%, rgba(220, 38, 38, .17), transparent 34%), rgba(255,255,255,.84);
+    }
+
+    .accuracy-value {
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        font-size: clamp(1.45rem, 2.25vw, 2rem);
+        font-weight: 950;
+        line-height: 1;
+        letter-spacing: -.055em;
+        margin-bottom: .35rem;
+    }
+
+    .accuracy-label {
+        color: #4b5563 !important;
+        -webkit-text-fill-color: #4b5563 !important;
+        font-size: .86rem;
+        font-weight: 780;
+        line-height: 1.45;
+    }
+
+    .accuracy-note {
+        color: #6b7280 !important;
+        -webkit-text-fill-color: #6b7280 !important;
+        font-size: .82rem;
+        line-height: 1.5;
+        font-weight: 650;
+        margin-top: .4rem;
+    }
+
+    .accuracy-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        border-radius: 999px;
+        padding: .34rem .58rem;
+        font-size: .76rem;
+        font-weight: 950;
+        border: 1px solid rgba(17,24,39,.075);
+        background: rgba(255,255,255,.82);
+        margin: .2rem .25rem .2rem 0;
+    }
+
+    .accuracy-help-box {
+        background: rgba(255, 255, 255, .76);
+        border: 1px solid rgba(17, 24, 39, .08);
+        border-radius: 22px;
+        padding: .95rem 1rem;
+        box-shadow: 0 14px 32px rgba(17, 24, 39, .045);
+        margin: .9rem 0 1rem 0;
+    }
+
+
+    @media (max-width: 900px) {
+        .story-grid,
+        .limitation-grid,
+        .alert-guide-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 980px) {
+        .story-grid,
+        .alert-guide-grid {
+            grid-template-columns: 1fr;
+        }
+        .hero-card { padding: 2.1rem 1.4rem; }
+    }
+
+
+
+
+    /* Extra download-button safety patch for Streamlit/BaseWeb variants. */
+    [data-testid="stDownloadButton"] button,
+    [data-testid="stDownloadButton"] [data-testid="baseButton-secondary"],
+    [data-testid="stDownloadButton"] [data-testid="baseButton-primary"],
+    .stDownloadButton button,
+    button[data-testid="baseButton-secondary"][kind="secondary"] {
+        background: linear-gradient(90deg, #ffffff 0%, #f5f3ff 48%, #ecfdf5 100%) !important;
+        background-color: #ffffff !important;
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        border: 1px solid rgba(17,24,39,.12) !important;
+        border-radius: 999px !important;
+        box-shadow: 0 12px 28px rgba(17,24,39,.08) !important;
+    }
+
+    [data-testid="stDownloadButton"] button *,
+    [data-testid="stDownloadButton"] [data-testid="baseButton-secondary"] *,
+    [data-testid="stDownloadButton"] [data-testid="baseButton-primary"] *,
+    .stDownloadButton button * {
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        fill: #111827 !important;
+    }
+
+    [data-testid="stDownloadButton"] button:hover,
+    [data-testid="stDownloadButton"] [data-testid="baseButton-secondary"]:hover,
+    [data-testid="stDownloadButton"] [data-testid="baseButton-primary"]:hover,
+    .stDownloadButton button:hover {
+        background: linear-gradient(90deg, #ffffff 0%, #ede9fe 48%, #dcfce7 100%) !important;
+        background-color: #ffffff !important;
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        border-color: rgba(109,40,217,.25) !important;
+    }
+
+    .top-risk-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        margin: 1rem 0 1.25rem 0;
+    }
+
+    .top-risk-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 315px;
+        border-radius: 28px;
+        padding: 1.25rem 1.25rem 1.15rem 1.25rem;
+        background:
+            radial-gradient(circle at 12% 10%, rgba(254, 226, 226, 0.72), transparent 31%),
+            radial-gradient(circle at 90% 8%, rgba(237, 233, 254, 0.78), transparent 35%),
+            radial-gradient(circle at 78% 92%, rgba(220, 252, 231, 0.66), transparent 38%),
+            rgba(255,255,255,.88);
+        border: 1px solid rgba(255,255,255,.96);
+        box-shadow: 0 20px 54px rgba(17,24,39,.095);
+    }
+
+    .top-risk-card:before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-top: 7px solid rgba(220, 38, 38, 0.46);
+        pointer-events: none;
+    }
+
+    .top-risk-head {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        margin-bottom: .9rem;
+    }
+
+    .top-risk-rank {
+        min-width: 2.45rem;
+        width: 2.45rem;
+        height: 2.45rem;
+        border-radius: 999px;
+        display: inline-grid;
+        place-items: center;
+        font-weight: 950;
+        font-size: 1rem;
+        background: linear-gradient(135deg, #fee2e2, #ede9fe, #dcfce7);
+        border: 1px solid rgba(17,24,39,.08);
+        box-shadow: 0 10px 24px rgba(17,24,39,.08);
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+    }
+
+    .top-risk-name {
+        font-size: 1.18rem;
+        line-height: 1.14;
+        letter-spacing: -.04em;
+        font-weight: 950;
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+    }
+
+    .top-risk-stats {
+        display: grid;
+        gap: .55rem;
+        margin: .75rem 0 1rem 0;
+    }
+
+    .top-risk-stat {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        padding: .62rem .72rem;
+        border-radius: 18px;
+        background: rgba(255,255,255,.80);
+        border: 1px solid rgba(17,24,39,.07);
+    }
+
+    .top-risk-stat span:first-child {
+        color: #6b7280 !important;
+        -webkit-text-fill-color: #6b7280 !important;
+        font-size: .78rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+    }
+
+    .top-risk-stat span:last-child {
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        font-size: .95rem;
+        font-weight: 950;
+        text-align: right;
+    }
+
+    .top-risk-actions {
+        margin-top: .75rem;
+        padding-top: .85rem;
+        border-top: 1px dashed rgba(17,24,39,.13);
+    }
+
+    .top-risk-actions-title {
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        font-weight: 950;
+        font-size: .88rem;
+        margin-bottom: .45rem;
+    }
+
+    .top-risk-actions ul {
+        margin: 0;
+        padding-left: 1.05rem;
+    }
+
+    .top-risk-actions li {
+        margin: .25rem 0;
+        color: #374151 !important;
+        -webkit-text-fill-color: #374151 !important;
+        font-size: .86rem;
+        font-weight: 750;
+        line-height: 1.35;
+    }
+
+    @media (max-width: 1050px) {
+        .top-risk-grid { grid-template-columns: 1fr; }
+        .top-risk-card { min-height: unset; }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Extra date-picker readability patch loaded after the main CSS.
+st.markdown(
+    """
+    <style>
+    div[data-testid="stDateInput"] div[data-baseweb="input"],
+    div[data-testid="stDateInput"] div[data-baseweb="base-input"],
+    div[data-testid="stDateInput"] div[data-baseweb="input"] > div,
+    section[data-testid="stSidebar"] div[data-testid="stDateInput"] div[data-baseweb="input"],
+    section[data-testid="stSidebar"] div[data-testid="stDateInput"] div[data-baseweb="base-input"],
+    section[data-testid="stSidebar"] div[data-testid="stDateInput"] div[data-baseweb="input"] > div,
+    section[data-testid="stSidebar"] div[data-testid="stDateInput"] input {
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        caret-color: #111827 !important;
+        border-radius: 16px !important;
+    }
+
+    div[data-baseweb="popover"] [data-baseweb="calendar"],
+    div[data-baseweb="popover"] [data-baseweb="calendar"] *,
+    div[data-baseweb="calendar"],
+    div[data-baseweb="calendar"] *,
+    div[data-baseweb="popover"] [role="gridcell"],
+    div[data-baseweb="popover"] [role="gridcell"] *,
+    div[data-baseweb="calendar"] [role="gridcell"],
+    div[data-baseweb="calendar"] [role="gridcell"] * {
+        background-color: #ffffff !important;
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        box-shadow: none !important;
+    }
+
+    div[data-baseweb="popover"] [aria-disabled="true"],
+    div[data-baseweb="popover"] [aria-disabled="true"] *,
+    div[data-baseweb="calendar"] [aria-disabled="true"],
+    div[data-baseweb="calendar"] [aria-disabled="true"] * {
+        background-color: #f8fafc !important;
+        color: #9ca3af !important;
+        -webkit-text-fill-color: #9ca3af !important;
+    }
+
+    div[data-baseweb="popover"] [aria-selected="true"],
+    div[data-baseweb="popover"] [aria-selected="true"] *,
+    div[data-baseweb="calendar"] [aria-selected="true"],
+    div[data-baseweb="calendar"] [aria-selected="true"] * {
+        background-color: #ef4444 !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        border-radius: 999px !important;
+    }
+
+    /* Streamlit download buttons: keep them light, not black. */
+    div[data-testid="stDownloadButton"] {
+        width: 100% !important;
+        margin: .7rem 0 1.1rem 0 !important;
+    }
+
+    div[data-testid="stDownloadButton"] > button,
+    div[data-testid="stDownloadButton"] button,
+    button[kind="secondary"] {
+        min-height: 3rem !important;
+        border-radius: 999px !important;
+        border: 1px solid rgba(17, 24, 39, .10) !important;
+        background: linear-gradient(90deg, rgba(255,255,255,.96), rgba(237,233,254,.95), rgba(220,252,231,.92)) !important;
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        font-weight: 950 !important;
+        box-shadow: 0 14px 32px rgba(17,24,39,.075), 0 8px 18px rgba(109,40,217,.10) !important;
+    }
+
+    div[data-testid="stDownloadButton"] > button:hover,
+    div[data-testid="stDownloadButton"] button:hover,
+    button[kind="secondary"]:hover {
+        transform: translateY(-1px);
+        border-color: rgba(109,40,217,.22) !important;
+        background: linear-gradient(90deg, #ffffff, #ede9fe, #dcfce7) !important;
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        box-shadow: 0 18px 38px rgba(109,40,217,.15), 0 8px 18px rgba(20,184,166,.09) !important;
+    }
+
+    div[data-testid="stDownloadButton"] p,
+    div[data-testid="stDownloadButton"] span,
+    div[data-testid="stDownloadButton"] div,
+    div[data-testid="stDownloadButton"] svg {
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        fill: #111827 !important;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -900,6 +1687,16 @@ def clean_alert(alert: Any) -> str:
 
 def alert_rank(alert: Any) -> int:
     alert_clean = clean_alert(alert)
+    if "very high" in alert_clean:
+        return 5
+    if "above outbreak" in alert_clean or alert_clean == "high":
+        return 4
+    if alert_clean == "moderate":
+        return 3
+    if alert_clean in ["watch", "warning"]:
+        return 2
+    if "below outbreak" in alert_clean or alert_clean == "low":
+        return 1
     ranks = {
         "low": 1,
         "watch": 2,
@@ -1090,20 +1887,36 @@ def render_alert_legend() -> None:
     st.markdown(
         """
         <div class="legend-box">
-            <div class="mini-label">Map legend</div>
-            <span class="legend-pill low">Low</span>
-            <span class="legend-pill watch">Watch</span>
-            <span class="legend-pill moderate">Moderate</span>
-            <span class="legend-pill high">High</span>
-            <span class="legend-pill veryhigh">Very high</span>
-            <div class="small-note" style="margin-top:.55rem;">
-                Colors represent dengue alert levels generated from model outputs.
+            <div class="mini-label">How to read the map colors</div>
+            <div class="small-note">
+                The colors do not mean the model is declaring an official outbreak. They show how urgently a barangay should be checked and prepared based on the forecast output.
+            </div>
+            <div class="alert-guide-grid">
+                <div class="alert-guide-card low">
+                    <div class="alert-guide-title">Green · Low</div>
+                    <div class="alert-guide-text">No strong warning signal. Continue routine monitoring, clean-up, and removal of standing water.</div>
+                </div>
+                <div class="alert-guide-card watch">
+                    <div class="alert-guide-title">Yellow · Watch</div>
+                    <div class="alert-guide-text">Early caution. Check common breeding sites and remind households before cases possibly rise.</div>
+                </div>
+                <div class="alert-guide-card moderate">
+                    <div class="alert-guide-title">Orange · Moderate</div>
+                    <div class="alert-guide-text">Noticeable risk. Inspect hotspots such as canals, schools, markets, and dense residential areas.</div>
+                </div>
+                <div class="alert-guide-card high">
+                    <div class="alert-guide-title">Red · High</div>
+                    <div class="alert-guide-text">Prioritize this barangay. Validate reports, intensify source reduction, and coordinate health response.</div>
+                </div>
+                <div class="alert-guide-card veryhigh">
+                    <div class="alert-guide-title">Purple · Very high</div>
+                    <div class="alert-guide-text">Urgent attention. Treat as a strong preparedness signal and coordinate with city health authorities.</div>
+                </div>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-
 
 def render_metric_card(title: str, value: str, note: str) -> None:
     st.markdown(
@@ -1407,6 +2220,25 @@ def normalize_forecast_df(df: pd.DataFrame, mode: str, scope: str) -> pd.DataFra
             df["barangay"] = "UNKNOWN"
         df["barangay"] = df["barangay"].apply(standardize_barangay_name)
 
+        threshold_candidates = [
+            "alert_threshold_cases",
+            "alert_threshold",
+            "outbreak_threshold_cases",
+            "barangay_outbreak_threshold_cases",
+            "learned_threshold",
+            "learned_alert_threshold",
+            "threshold_cases",
+            "case_threshold",
+        ]
+        threshold_has_source = any(col in df.columns for col in threshold_candidates)
+        df["alert_threshold_cases"] = as_numeric_series(
+            coalesce_series(df, threshold_candidates, default=1),
+            default=1,
+        ).clip(lower=1)
+        df["alert_threshold_source"] = (
+            "Forecast CSV alert threshold" if threshold_has_source else "Fallback: ≥1 reported case"
+        )
+
     if scope == "city":
         df["city_outbreak_threshold_cases"] = as_numeric_series(
             coalesce_series(df, ["city_outbreak_threshold_cases", "outbreak_threshold_cases"], default=0),
@@ -1479,6 +2311,519 @@ def load_barangay_shapefile() -> Optional[gpd.GeoDataFrame]:
             gdf = gdf.to_crs(epsg=4326)
 
         return gdf[["barangay", "geometry"]].copy()
+
+
+
+# ============================================================
+# ACTUAL CASE + ACCURACY CHECK HELPERS
+# ============================================================
+
+@st.cache_data(show_spinner=False)
+def load_actual_case_data(path_text: str) -> Optional[pd.DataFrame]:
+    """Load actual dengue cases from FINAL_DATASET.xlsx for post-hoc forecast checking."""
+    path = Path(path_text)
+    if not path.exists():
+        return None
+
+    try:
+        actual_df = pd.read_excel(path)
+    except Exception as exc:
+        st.warning(
+            "Could not read `data/FINAL_DATASET.xlsx` for the accuracy check. "
+            "Install `openpyxl` if Streamlit says the Excel engine is missing."
+        )
+        st.code(str(exc))
+        return None
+
+    actual_df = actual_df.copy()
+    actual_df.columns = [clean_column_name(c) for c in actual_df.columns]
+    actual_df = collapse_duplicate_columns(actual_df)
+
+    actual_df["barangay"] = coalesce_series(actual_df, ["barangay", "brgy", "barangay_name"], default="UNKNOWN")
+    actual_df["year"] = as_numeric_series(coalesce_series(actual_df, ["year", "epi_year", "origin_year"], default=0), default=0).astype(int)
+    actual_df["week"] = as_numeric_series(coalesce_series(actual_df, ["week", "epi_week", "origin_week"], default=0), default=0).astype(int)
+    actual_df["actual_cases"] = as_numeric_series(
+        coalesce_series(actual_df, ["dengue_cases", "actual_cases", "cases", "dengue"], default=0),
+        default=0,
+    ).clip(lower=0)
+
+    actual_df["barangay"] = actual_df["barangay"].apply(standardize_barangay_name)
+    actual_df = actual_df.loc[(actual_df["year"] > 0) & (actual_df["week"] > 0)].copy()
+    actual_df = actual_df.groupby(["barangay", "year", "week"], as_index=False)["actual_cases"].sum()
+    return actual_df
+
+
+def actual_week_available(actual_df: Optional[pd.DataFrame], year: Any, week: Any) -> tuple[bool, str]:
+    if actual_df is None or actual_df.empty:
+        return False, "FINAL_DATASET.xlsx was not found or could not be read."
+
+    try:
+        y = int(year)
+        w = int(week)
+    except Exception:
+        return False, "Target year/week could not be read."
+
+    week_rows = actual_df.loc[(actual_df["year"] == y) & (actual_df["week"] == w)]
+    if week_rows.empty:
+        return False, f"No actual case rows found for {y} W{w}."
+
+    # Known placeholder in the uploaded dataset: 2026 W19 is present but all dengue cases are zero
+    # because actual data are not available yet.
+    if y == 2026 and w == 19 and float(week_rows["actual_cases"].sum()) == 0:
+        return False, "2026 W19 is excluded because the dataset contains placeholder zeroes, not actual reported cases."
+
+    return True, "Actual case data available."
+
+
+def prediction_warning_flag(row: pd.Series) -> bool:
+    """Count only Moderate/High/Very High as a predicted outbreak.
+
+    Watch/yellow is still shown in the app as an early monitoring signal, but it is
+    not treated as an outbreak prediction for the accuracy check. This keeps the
+    right/wrong score aligned with the question: "Did the model correctly predict
+    an outbreak-level barangay?"
+    """
+    try:
+        return alert_rank(row.get("alert_level")) >= 3
+    except Exception:
+        return False
+
+
+def prediction_caution_flag(row: pd.Series) -> bool:
+    """Count Watch/Warning and above as an early caution signal.
+
+    This is separate from the strict outbreak alert. It answers a softer but useful
+    public-health question: did the app at least tell the user to monitor the
+    barangay more closely before/during an actual outbreak?
+    """
+    try:
+        return alert_rank(row.get("alert_level")) >= 2
+    except Exception:
+        return False
+
+
+def warning_accuracy_percent(tp: int, tn: int, total_barangays: int = 80) -> Optional[float]:
+    """Overall warning accuracy requested as (true positives + true negatives) / 80."""
+    try:
+        total_barangays = int(total_barangays)
+        if total_barangays <= 0:
+            return None
+        return (int(tp) + int(tn)) / total_barangays
+    except Exception:
+        return None
+
+
+def build_accuracy_comparison(barangay_rows: pd.DataFrame, actual_df: pd.DataFrame, target_year: int, target_week: int) -> pd.DataFrame:
+    actual_week = actual_df.loc[(actual_df["year"] == int(target_year)) & (actual_df["week"] == int(target_week))].copy()
+    compare = barangay_rows.copy()
+    compare["barangay"] = compare["barangay"].apply(standardize_barangay_name)
+
+    # Forecast rows may already contain an `actual_cases` column in some CSV versions.
+    # Drop it before merging so pandas does not rename the true actual column into
+    # actual_cases_x / actual_cases_y and trigger KeyError: 'actual_cases'.
+    compare = compare.drop(columns=["actual_cases", "actual_cases_x", "actual_cases_y"], errors="ignore")
+
+    actual_case_col = None
+    for candidate in ["actual_cases", "dengue_cases", "cases", "dengue"]:
+        if candidate in actual_week.columns:
+            actual_case_col = candidate
+            break
+    if actual_case_col is None:
+        actual_week = actual_week.copy()
+        actual_week["actual_cases"] = 0
+        actual_case_col = "actual_cases"
+
+    actual_week = actual_week[["barangay", actual_case_col]].copy()
+    actual_week = actual_week.rename(columns={actual_case_col: "actual_cases"})
+    actual_week["barangay"] = actual_week["barangay"].apply(standardize_barangay_name)
+    actual_week["actual_cases"] = pd.to_numeric(actual_week["actual_cases"], errors="coerce").fillna(0).clip(lower=0)
+    actual_week = actual_week.groupby("barangay", as_index=False)["actual_cases"].sum()
+
+    compare = compare.merge(actual_week, on="barangay", how="left")
+    if "actual_cases" not in compare.columns:
+        compare["actual_cases"] = 0
+    compare["actual_cases"] = pd.to_numeric(compare["actual_cases"], errors="coerce").fillna(0).clip(lower=0)
+
+    if "alert_threshold_cases" not in compare.columns:
+        compare["alert_threshold_cases"] = 1
+    if "alert_threshold_source" not in compare.columns:
+        compare["alert_threshold_source"] = "Fallback: ≥1 reported case"
+
+    compare["alert_threshold_cases"] = pd.to_numeric(compare["alert_threshold_cases"], errors="coerce").fillna(1).clip(lower=1)
+    compare["actual_outbreak"] = compare["actual_cases"] >= compare["alert_threshold_cases"]
+    compare["predicted_warning"] = compare.apply(prediction_warning_flag, axis=1)
+    compare["predicted_caution"] = compare.apply(prediction_caution_flag, axis=1)
+
+    compare["prediction_result"] = "Correct low / no outbreak"
+    compare.loc[compare["predicted_warning"] & compare["actual_outbreak"], "prediction_result"] = "Correct warning"
+    compare.loc[compare["predicted_warning"] & ~compare["actual_outbreak"], "prediction_result"] = "False warning"
+    compare.loc[~compare["predicted_warning"] & compare["actual_outbreak"], "prediction_result"] = "Missed outbreak"
+
+    compare["absolute_error"] = (pd.to_numeric(compare["predicted_cases"], errors="coerce").fillna(0) - compare["actual_cases"]).abs()
+    compare["range_lower"] = (pd.to_numeric(compare["predicted_cases"], errors="coerce").fillna(0) - pd.to_numeric(compare.get("selected_error_value", 0), errors="coerce").fillna(0)).clip(lower=0)
+    compare["range_upper"] = (pd.to_numeric(compare["predicted_cases"], errors="coerce").fillna(0) + pd.to_numeric(compare.get("selected_error_value", 0), errors="coerce").fillna(0)).clip(lower=0)
+    compare["actual_within_range"] = (compare["actual_cases"] >= compare["range_lower"]) & (compare["actual_cases"] <= compare["range_upper"])
+    return compare
+
+
+def safe_rate(numerator: float, denominator: float) -> Optional[float]:
+    try:
+        denominator = float(denominator)
+        if denominator == 0:
+            return None
+        return float(numerator) / denominator
+    except Exception:
+        return None
+
+
+def fmt_rate(value: Optional[float], digits: int = 1) -> str:
+    if value is None or pd.isna(value):
+        return "—"
+    return f"{float(value) * 100:.{digits}f}%"
+
+
+def render_accuracy_cards(records: List[Dict[str, Any]]) -> None:
+    total_tp = sum(int(r["correct_warnings"]) for r in records)
+    total_fp = sum(int(r["false_warnings"]) for r in records)
+    total_fn = sum(int(r["missed_outbreaks"]) for r in records)
+    checked_horizons = len(records)
+
+    card_html = f"""
+    <div class="accuracy-grid">
+        <div class="accuracy-card good">
+            <div class="accuracy-value">{checked_horizons}</div>
+            <div class="accuracy-label">forecast horizon(s) checked against actual reported cases</div>
+        </div>
+        <div class="accuracy-card good">
+            <div class="accuracy-value">{total_tp}</div>
+            <div class="accuracy-label">correct outbreak-level alert(s)</div>
+            <div class="accuracy-note">Predicted Moderate/High/Very High and actual cases reached the threshold.</div>
+        </div>
+        <div class="accuracy-card warn">
+            <div class="accuracy-value">{total_fp}</div>
+            <div class="accuracy-label">false outbreak-level alert(s)</div>
+            <div class="accuracy-note">Predicted Moderate/High/Very High, but actual cases did not reach the threshold.</div>
+        </div>
+        <div class="accuracy-card bad">
+            <div class="accuracy-value">{total_fn}</div>
+            <div class="accuracy-label">missed outbreak(s)</div>
+            <div class="accuracy-note">Actual cases reached the threshold, but the app did not show an outbreak-level alert.</div>
+        </div>
+    </div>
+    """
+    st.markdown(card_html, unsafe_allow_html=True)
+
+
+def render_accuracy_check(origin_barangay: pd.DataFrame, origin_city: pd.DataFrame, actual_df: Optional[pd.DataFrame]) -> None:
+    st.markdown(
+        """
+        <div id="accuracy-section" class="scroll-anchor"></div>
+        <section class="story-section">
+            <div class="story-kicker">Accuracy check</div>
+            <div class="story-title">How the forecast compared with actual reported dengue cases</div>
+            <div class="story-body">
+                When the target week already exists in <b>FINAL_DATASET.xlsx</b>, this section compares predicted outbreak-level barangay alerts with actual reported dengue cases. <b>Watch/yellow is treated as a monitoring signal, not an outbreak prediction</b>; Moderate, High, and Very High are counted as predicted outbreaks. It is not shown for target weeks without reliable actual data; specifically, <b>2026 W19 is excluded</b> because it is a placeholder all-zero week in the uploaded dataset.
+            </div>
+            <div class="accuracy-help-box">
+                <span class="accuracy-pill">✅ Correct warning</span>
+                <span class="accuracy-pill">⚠️ False warning</span>
+                <span class="accuracy-pill">❌ Missed outbreak</span>
+                <span class="accuracy-pill">✅ Correct low</span>
+                <div class="accuracy-note">Actual outbreak is checked using the forecast CSV's alert threshold when available. If no threshold column exists, the app falls back to at least 1 reported case. Overall accuracy is computed as (true positives + true negatives) ÷ 80 barangays.</div>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if actual_df is None or actual_df.empty:
+        st.info("Accuracy check is hidden because `data/FINAL_DATASET.xlsx` was not found or could not be read.")
+        return
+
+    records: List[Dict[str, Any]] = []
+    detail_tables: Dict[str, pd.DataFrame] = {}
+    skipped_notes: List[str] = []
+
+    for horizon in DISPLAY_HORIZONS:
+        barangay_rows = origin_barangay.loc[pd.to_numeric(origin_barangay["horizon"], errors="coerce") == int(horizon)].copy()
+        city_rows = origin_city.loc[pd.to_numeric(origin_city["horizon"], errors="coerce") == int(horizon)].copy()
+        if barangay_rows.empty or city_rows.empty:
+            continue
+
+        city_row = city_rows.iloc[0]
+        target_year = int(city_row["target_year"])
+        target_week = int(city_row["target_week"])
+        available, reason = actual_week_available(actual_df, target_year, target_week)
+        label = f"{forecast_label_from_horizon(horizon)} · {target_year} W{target_week}"
+
+        if not available:
+            skipped_notes.append(f"{label}: {reason}")
+            continue
+
+        compare = build_accuracy_comparison(barangay_rows, actual_df, target_year, target_week)
+
+        tp = int(((compare["predicted_warning"]) & (compare["actual_outbreak"])).sum())
+        fp = int(((compare["predicted_warning"]) & (~compare["actual_outbreak"])).sum())
+        fn = int(((~compare["predicted_warning"]) & (compare["actual_outbreak"])).sum())
+        tn = int(((~compare["predicted_warning"]) & (~compare["actual_outbreak"])).sum())
+        precision = safe_rate(tp, tp + fp)
+        recall = safe_rate(tp, tp + fn)
+        f1 = None if precision is None or recall is None or (precision + recall) == 0 else 2 * precision * recall / (precision + recall)
+        overall_accuracy = warning_accuracy_percent(tp, tn, 80)
+        mae = compare["absolute_error"].mean()
+        within_share = compare["actual_within_range"].mean()
+        actual_city_cases = compare["actual_cases"].sum()
+        predicted_city_cases = float(city_row.get("predicted_cases", 0))
+
+        records.append({
+            "horizon": horizon,
+            "Forecast horizon": forecast_label_from_horizon(horizon),
+            "Target week": f"{target_year} W{target_week}",
+            "Actual city cases": int(round(actual_city_cases)),
+            "Predicted city range": str(city_row.get("predicted_case_range", "—")),
+            "City abs. error": round(abs(predicted_city_cases - actual_city_cases), 1),
+            "correct_warnings": tp,
+            "false_warnings": fp,
+            "missed_outbreaks": fn,
+            "correct_lows": tn,
+            "Overall accuracy": fmt_rate(overall_accuracy),
+            "Precision": fmt_rate(precision),
+            "Recall": fmt_rate(recall),
+            "F1": fmt_rate(f1),
+            "Barangay MAE": round(float(mae), 2) if not pd.isna(mae) else "—",
+            "Within range": fmt_rate(within_share),
+        })
+
+        result_order = {
+            "Missed outbreak": 1,
+            "False warning": 2,
+            "Correct warning": 3,
+            "Correct low / no outbreak": 4,
+        }
+        compare["result_order"] = compare["prediction_result"].map(result_order).fillna(9)
+        detail = compare.sort_values(["result_order", "actual_cases", "predicted_cases"], ascending=[True, False, False]).copy()
+        detail["Forecast target"] = f"{target_year} W{target_week}"
+        detail["Predicted outbreak-level alert?"] = detail["predicted_warning"].map({True: "Yes", False: "No"})
+        detail["Actual outbreak?"] = detail["actual_outbreak"].map({True: "Yes", False: "No"})
+        detail["Actual cases"] = detail["actual_cases"].round(0).astype(int)
+        detail["Outbreak threshold used"] = detail["alert_threshold_cases"].round(2)
+        detail["Absolute error"] = detail["absolute_error"].round(2)
+        detail["Within predicted range?"] = detail["actual_within_range"].map({True: "Yes", False: "No"})
+        detail["Result"] = detail["prediction_result"].replace({
+            "Correct warning": "✅ Correct warning",
+            "False warning": "⚠️ False warning",
+            "Missed outbreak": "❌ Missed outbreak",
+            "Correct low / no outbreak": "✅ Correct low / no outbreak",
+        })
+        detail = detail.rename(columns={
+            "barangay": "Barangay",
+            "predicted_cases_display": "Predicted cases",
+            "predicted_case_range": "Predicted case range",
+            "alert_level": "Predicted alert level",
+            "alert_threshold_source": "Threshold source",
+        })[[
+            "Barangay", "Forecast target", "Predicted cases", "Predicted case range",
+            "Actual cases", "Predicted alert level", "Outbreak threshold used",
+            "Predicted outbreak-level alert?", "Actual outbreak?", "Within predicted range?",
+            "Result", "Absolute error", "Threshold source",
+        ]]
+        detail_tables[label] = detail
+
+    if not records:
+        st.info("No selected forecast target week has reliable actual data yet. " + (" ".join(skipped_notes[:3]) if skipped_notes else ""))
+        return
+
+    render_accuracy_cards(records)
+
+    summary_df = pd.DataFrame(records)
+    summary_display = summary_df[[
+        "Forecast horizon", "Target week", "Actual city cases", "Predicted city range",
+        "City abs. error", "correct_warnings", "false_warnings", "missed_outbreaks",
+        "correct_lows", "Overall accuracy", "Precision", "Recall", "F1", "Barangay MAE", "Within range",
+    ]].rename(columns={
+        "correct_warnings": "Correct warnings",
+        "false_warnings": "False warnings",
+        "missed_outbreaks": "Missed outbreaks",
+        "correct_lows": "Correct lows",
+    })
+    st.markdown("#### Accuracy summary by forecast horizon")
+    render_pretty_table(summary_display, max_rows=20)
+
+    if skipped_notes:
+        with st.expander("Skipped target weeks"):
+            for note in skipped_notes:
+                st.markdown(f"- {note}")
+
+    st.markdown("#### Barangay-level right/wrong check")
+    selected_detail_label = st.selectbox("Choose target week to inspect", list(detail_tables.keys()))
+    render_pretty_table(detail_tables[selected_detail_label], max_rows=120)
+
+
+def render_top_risk_cards(table: pd.DataFrame, count: int = 3) -> None:
+    """Render only the highest-risk barangays as clean cards with actions."""
+    if table.empty:
+        st.info("No barangay prediction rows to show.")
+        return
+
+    top = table.head(count).copy()
+    cards: List[str] = []
+    for idx, row in enumerate(top.to_dict("records"), start=1):
+        alert_level = str(row.get("Alert level", "—"))
+        barangay = html.escape(str(row.get("Barangay", "—")))
+        pred_range = html.escape(str(row.get("Predicted case range", "—")))
+        probability = html.escape(str(row.get("Outbreak probability", "—")))
+        alert_html = f'<span class="alert-badge {alert_badge_class(alert_level)}">{html.escape(alert_level)}</span>'
+        actions = get_intervention_plan(alert_level)[:3]
+        action_items = "".join(f"<li>{html.escape(str(action))}</li>" for action in actions)
+
+        # Build the HTML as one non-indented string. This avoids Streamlit/Markdown
+        # interpreting later cards as code blocks and showing raw HTML.
+        card = (
+            '<div class="top-risk-card">'
+            '<div class="top-risk-head">'
+            f'<div class="top-risk-rank">{idx}</div>'
+            f'<div class="top-risk-name">{barangay}</div>'
+            '</div>'
+            '<div class="top-risk-stats">'
+            f'<div class="top-risk-stat"><span>Predicted</span><span>{pred_range}</span></div>'
+            f'<div class="top-risk-stat"><span>Probability</span><span>{probability}</span></div>'
+            f'<div class="top-risk-stat"><span>Alert</span><span>{alert_html}</span></div>'
+            '</div>'
+            '<div class="top-risk-actions">'
+            '<div class="top-risk-actions-title">Recommended preparedness actions</div>'
+            f'<ul>{action_items}</ul>'
+            '</div>'
+            '</div>'
+        )
+        cards.append(card)
+
+    st.markdown('<div class="top-risk-grid">' + ''.join(cards) + '</div>', unsafe_allow_html=True)
+
+
+def render_accuracy_check_for_horizon(
+    barangay_rows: pd.DataFrame,
+    city_row: pd.Series,
+    actual_df: Optional[pd.DataFrame],
+    horizon: int,
+) -> None:
+    """Show a compact accuracy check inside each forecast-horizon tab.
+
+    Strict outbreak alert = Moderate/High/Very High.
+    Early caution signal = Watch/Warning/Moderate/High/Very High.
+    """
+    try:
+        target_year = int(city_row["target_year"])
+        target_week = int(city_row["target_week"])
+    except Exception:
+        st.info("Accuracy check is not available because the target year/week could not be read.")
+        return
+
+    st.markdown(
+        f"""
+        <div id="accuracy-section" class="scroll-anchor"></div>
+        <div class="accuracy-help-box">
+            <div class="mini-label">Accuracy check · {html.escape(forecast_label_from_horizon(horizon))} · {target_year} W{target_week}</div>
+            <div class="accuracy-note">
+                Strict outbreak accuracy counts <b>Moderate, High, and Very High</b> as predicted outbreak-level alerts.
+                Early caution capture counts <b>Watch/Warning and above</b> as useful monitoring signals. This keeps the app fair: Watch is not treated as an outbreak declaration, but it is still recognized when it helps flag a barangay that later had an actual outbreak.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if actual_df is None or actual_df.empty:
+        st.info("Accuracy check is hidden because `data/FINAL_DATASET.xlsx` was not found or could not be read.")
+        return
+
+    available, reason = actual_week_available(actual_df, target_year, target_week)
+    if not available:
+        st.info(f"Accuracy check not shown for {target_year} W{target_week}: {reason}")
+        return
+
+    compare = build_accuracy_comparison(barangay_rows, actual_df, target_year, target_week)
+
+    tp = int(((compare["predicted_warning"]) & (compare["actual_outbreak"])).sum())
+    fp = int(((compare["predicted_warning"]) & (~compare["actual_outbreak"])).sum())
+    fn = int(((~compare["predicted_warning"]) & (compare["actual_outbreak"])).sum())
+    tn = int(((~compare["predicted_warning"]) & (~compare["actual_outbreak"])).sum())
+
+    actual_outbreaks = int(compare["actual_outbreak"].sum())
+    strict_precision = safe_rate(tp, tp + fp)
+    strict_recall = safe_rate(tp, tp + fn)
+    overall_accuracy = warning_accuracy_percent(tp, tn, 80)
+
+    caution_hits = int(((compare["predicted_caution"]) & (compare["actual_outbreak"])).sum())
+    caution_misses = int(((~compare["predicted_caution"]) & (compare["actual_outbreak"])).sum())
+    caution_capture = safe_rate(caution_hits, actual_outbreaks)
+
+    barangay_mae = compare["absolute_error"].mean()
+    actual_city_cases = int(round(compare["actual_cases"].sum()))
+    predicted_city_cases = float(city_row.get("predicted_cases", 0))
+    city_abs_error = abs(predicted_city_cases - actual_city_cases)
+
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1:
+        st.metric("Overall accuracy", fmt_rate(overall_accuracy))
+    with c2:
+        st.metric("Strict outbreak capture", fmt_rate(strict_recall))
+    with c3:
+        st.metric("Early caution capture", fmt_rate(caution_capture))
+    with c4:
+        st.metric("Missed outbreaks", fn)
+    with c5:
+        st.metric("Barangay MAE", fmt_number(barangay_mae, 2))
+
+    st.caption(
+        f"Overall accuracy includes correct non-outbreak barangays: ({tp} true positives + {tn} true negatives) / 80 = {fmt_rate(overall_accuracy)}. "
+        f"Strict alerts: TP={tp}, FP={fp}, FN={fn}, TN={tn}. "
+        f"Early caution captured {caution_hits}/{actual_outbreaks} actual outbreak barangays; {caution_misses} had no caution signal. "
+        f"Citywide actual cases={actual_city_cases}; predicted={fmt_number(predicted_city_cases, 1)}; absolute error={fmt_number(city_abs_error, 1)}."
+    )
+
+    result_order = {
+        "Missed outbreak": 1,
+        "False warning": 2,
+        "Correct warning": 3,
+        "Correct low / no outbreak": 4,
+    }
+    compare["result_order"] = compare["prediction_result"].map(result_order).fillna(9)
+    detail = compare.sort_values(["result_order", "actual_cases", "predicted_cases"], ascending=[True, False, False]).copy()
+    detail["Predicted outbreak-level alert?"] = detail["predicted_warning"].map({True: "Yes", False: "No"})
+    detail["Early caution signal?"] = detail["predicted_caution"].map({True: "Yes", False: "No"})
+    detail["Actual outbreak?"] = detail["actual_outbreak"].map({True: "Yes", False: "No"})
+    detail["Actual cases"] = detail["actual_cases"].round(0).astype(int)
+    detail["Outbreak threshold used"] = detail["alert_threshold_cases"].round(2)
+    detail["Absolute error"] = detail["absolute_error"].round(2)
+    detail["Within predicted range?"] = detail["actual_within_range"].map({True: "Yes", False: "No"})
+    detail["Result"] = detail["prediction_result"].replace({
+        "Correct warning": "✅ Correct outbreak alert",
+        "False warning": "⚠️ False outbreak alert",
+        "Missed outbreak": "❌ Missed strict outbreak alert",
+        "Correct low / no outbreak": "✅ Correct non-outbreak",
+    })
+    detail = detail.rename(columns={
+        "barangay": "Barangay",
+        "predicted_cases_display": "Predicted cases",
+        "predicted_case_range": "Predicted case range",
+        "alert_level": "Predicted alert level",
+        "alert_threshold_source": "Threshold source",
+    })[[
+        "Barangay", "Predicted cases", "Predicted case range", "Actual cases",
+        "Predicted alert level", "Outbreak threshold used", "Predicted outbreak-level alert?",
+        "Early caution signal?", "Actual outbreak?", "Within predicted range?",
+        "Result", "Absolute error", "Threshold source",
+    ]]
+
+    csv = detail.to_csv(index=False).encode("utf-8-sig")
+    st.download_button(
+        "Download full accuracy check CSV",
+        data=csv,
+        file_name=f"accuracy_check_{target_year}_W{target_week}_H{int(horizon)}.csv",
+        mime="text/csv",
+        use_container_width=True,
+        key=f"accuracy_download_{target_year}_{target_week}_{int(horizon)}",
+    )
 
 
 # ============================================================
@@ -1608,6 +2953,185 @@ def create_barangay_prediction_map(shape_gdf: gpd.GeoDataFrame, barangay_rows: p
     return m
 
 
+
+# ============================================================
+# RESEARCH STORY SECTIONS
+# ============================================================
+
+def render_story_section(kicker: str, title: str, body: str, tiles: Optional[List[Dict[str, str]]] = None, anchor_id: Optional[str] = None) -> None:
+    """Render a custom HTML section without Markdown indentation artifacts."""
+    safe_anchor = f' id="{html.escape(anchor_id)}"' if anchor_id else ""
+    tile_html = ""
+    if tiles:
+        parts = ["<div class='story-grid'>"]
+        for tile in tiles:
+            icon = html.escape(tile.get("icon", "•"))
+            value = html.escape(tile.get("value", ""))
+            note = html.escape(tile.get("note", ""))
+            source = html.escape(tile.get("source", ""))
+            source_html = f"<div class='story-tile-source'>{source}</div>" if source else ""
+            parts.append(
+                "<div class='story-tile'>"
+                f"<div class='story-tile-icon'>{icon}</div>"
+                f"<div class='story-tile-value'>{value}</div>"
+                f"<div class='story-tile-note'>{note}</div>"
+                f"{source_html}"
+                "</div>"
+            )
+        parts.append("</div>")
+        tile_html = "".join(parts)
+
+    section_html = (
+        f"<section{safe_anchor} class='story-section'>"
+        f"<div class='story-kicker'>{html.escape(kicker)}</div>"
+        f"<div class='story-title'>{html.escape(title)}</div>"
+        f"<div class='story-body'>{body}</div>"
+        f"{tile_html}"
+        "</section>"
+    )
+    st.markdown(section_html, unsafe_allow_html=True)
+
+def render_rationale_and_methods() -> None:
+    render_story_section(
+        "Rationale",
+        "Why Cebu City needs an early dengue warning map",
+        """
+        Dengue remains a practical public health problem because risk can rise quickly, spread unevenly, and differ from one barangay to another. Globally, WHO reported record dengue transmission in 2024, while this study focuses that bigger problem into Cebu City by turning dengue, weather, flood, land-cover, population, and spatial signals into an easier-to-read preparedness dashboard. The app is not meant to declare outbreaks. It is meant to help users decide where to check first and where prevention work may be needed earlier.
+        """,
+        [
+            {"icon": "🌍", "value": "14.6M+", "note": "Reported global dengue cases in 2024.", "source": "WHO"},
+            {"icon": "🗺️", "value": "80", "note": "Cebu City barangays covered by the study dataset.", "source": "This study"},
+            {"icon": "📈", "value": "27,518", "note": "Recorded Cebu City dengue cases used from 2015 to 2024.", "source": "This study"},
+        ],
+        anchor_id="rationale-section",
+    )
+
+    render_story_section(
+        "Methodology",
+        "How the forecasts were produced",
+        """
+        The study used weekly dengue records, weather and climate variables, rainfall and flood-related indicators, land-cover data, population measures, and spatial dengue features. Data were arranged by barangay and epidemiological week, then converted into lagged, rolling, seasonal, citywide, and neighboring-barangay predictors. The app reads the saved forecast CSV outputs and displays two linked views: a citywide forecast for overall burden and a barangay map for localized risk. The strongest practical use is short-term decision support: barangay forecasts are most defensible around the selected week to four weeks ahead, while citywide forecasts are strongest around the selected week to three weeks ahead.
+        """,
+        [
+            {"icon": "🧾", "value": "2015–2024", "note": "Historical period used for model development and evaluation.", "source": "Data split"},
+            {"icon": "⏳", "value": "H+0 to H+12", "note": "Forecast horizons prepared for short-term and longer planning windows.", "source": "Forecast design"},
+            {"icon": "🧭", "value": "Map + table", "note": "Outputs are shown as case ranges, alerts, and barangay risk maps.", "source": "App output"},
+        ],
+        anchor_id="methods-section",
+    )
+
+def render_limitations_and_actions() -> None:
+    st.markdown(
+        """
+        <section id="limitations-section" class="story-section">
+            <div class="story-kicker">Limitations and what to do</div>
+            <div class="story-title">Use the app as a guide, not as a final diagnosis</div>
+            <div class="story-body">
+                The forecast is useful because it summarizes risk signals, but it should still be checked against real barangay conditions. These are the main limits and the proper response to each one.
+            </div>
+            <div class="limitation-grid">
+                <div class="limitation-card">
+                    <div class="limitation-card-title">1. Underreporting and reporting delays</div>
+                    <div class="limitation-card-text">Some dengue cases may be missed, self-managed at home, or reported late. A Punta Princesa, Cebu City study comparing active and passive surveillance reported a 21% cumulative reporting rate of symptomatic dengue infections, equivalent to an expansion factor of 4.7. <b>What to do:</b> confirm high-risk alerts using barangay health-center records, suspected-case logs, school reports, and field validation.</div>
+                </div>
+                <div class="limitation-card">
+                    <div class="limitation-card-title">2. Longer horizons are less certain</div>
+                    <div class="limitation-card-text">Forecasts farther from the selected week are more uncertain because weather, reporting, mosquito activity, and interventions can change. <b>What to do:</b> prioritize the selected week to the next few weeks for action, then treat later horizons as early awareness only.</div>
+                </div>
+                <div class="limitation-card">
+                    <div class="limitation-card-title">3. Not all local risk factors are included</div>
+                    <div class="limitation-card-text">The model does not yet include every barangay-level risk detail such as drainage hotspots, waste-collection issues, construction sites, schools, markets, larval indices, mosquito surveillance, and mobility. <b>What to do:</b> add these as new features in future versions.</div>
+                </div>
+                <div class="limitation-card">
+                    <div class="limitation-card-title">4. The model needs updating</div>
+                    <div class="limitation-card-text">Dengue patterns can shift over time. A model trained on older patterns may weaken if reporting systems, climate, population, or local interventions change. <b>What to do:</b> retrain and recheck the model when new weekly case records and updated environmental data are available.</div>
+                </div>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_proponents() -> None:
+    st.markdown(
+        """
+        <div class="proponents-card">
+            <div class="mini-label">Proponents</div>
+            <div class="story-body">
+                <span class="proponents-name">Calo, Christopher S.</span>; 
+                <span class="proponents-name">Capistrano, Niño Marchnil F.</span>; 
+                <span class="proponents-name">Lacandula, Kaizer Kian G.</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_references() -> None:
+    st.markdown(
+        """
+        <section id="references-section" class="story-section">
+            <div class="story-kicker">References</div>
+            <div class="story-title">Sources used for the app notes</div>
+            <div class="reference-list">
+                <a class="reference-link" href="https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue" target="_blank" rel="noopener noreferrer">World Health Organization. Dengue and severe dengue fact sheet.<span class="reference-small">Used for global dengue burden, prevention notes, and underreporting context.</span></a>
+                <a class="reference-link" href="https://www.who.int/publications/i/item/who-wer10052-665-678" target="_blank" rel="noopener noreferrer">World Health Organization. Dengue: global situation, surveillance and progress – 2024 update.<span class="reference-small">Used for the 2024 global dengue surveillance figures.</span></a>
+                <a class="reference-link" href="https://doi.org/10.4269/ajtmh.16-0488" target="_blank" rel="noopener noreferrer">Undurraga et al. (2017). Disease burden of dengue in the Philippines: adjusting for underreporting by comparing active and passive dengue surveillance in Punta Princesa, Cebu City.<span class="reference-small">Used for the Cebu City underreporting limitation.</span></a>
+                <a class="reference-link" href="https://doi.org/10.5194/isprs-archives-XLVIII-4-W8-2023-417-2024" target="_blank" rel="noopener noreferrer">Rejuso et al. (2024). Spatiotemporal analysis of dengue cases in Cebu City from year 2015 to 2022.<span class="reference-small">Used for Cebu City dengue spatial-temporal context.</span></a>
+                <a class="reference-link" href="https://doi.org/10.1186/s12879-018-3066-0" target="_blank" rel="noopener noreferrer">Carvajal et al. (2018). Machine learning methods reveal temporal patterns of dengue incidence using meteorological factors in metropolitan Manila.<span class="reference-small">Used for dengue forecasting and meteorological predictor context.</span></a>
+                <a class="reference-link" href="https://doi.org/10.1371/journal.pntd.0001908" target="_blank" rel="noopener noreferrer">Hii et al. (2012). Forecast of dengue incidence using temperature and rainfall.<span class="reference-small">Used for climate-lag and weather-related dengue forecasting context.</span></a>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def scroll_to_prediction_results() -> None:
+    components.html(
+        """
+        <script>
+        const target = window.parent.document.getElementById('prediction-results');
+        if (target) {
+            setTimeout(() => {
+                target.scrollIntoView({behavior: 'smooth', block: 'start'});
+            }, 180);
+        }
+        </script>
+        """,
+        height=0,
+    )
+
+
+def activate_navigation_chips() -> None:
+    components.html(
+        """
+        <script>
+        const doc = window.parent.document;
+        function bindChipScroll() {
+            doc.querySelectorAll('a.chip-scroll').forEach((chip) => {
+                if (chip.dataset.boundScroll === '1') return;
+                chip.dataset.boundScroll = '1';
+                chip.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const targetId = chip.getAttribute('data-target') || (chip.getAttribute('href') || '').replace('#', '');
+                    const target = doc.getElementById(targetId);
+                    if (target) {
+                        target.scrollIntoView({behavior: 'smooth', block: 'start'});
+                    }
+                });
+            });
+        }
+        bindChipScroll();
+        setTimeout(bindChipScroll, 500);
+        setTimeout(bindChipScroll, 1500);
+        </script>
+        """,
+        height=0,
+    )
+
 # ============================================================
 # HERO
 # ============================================================
@@ -1616,39 +3140,42 @@ def hero() -> None:
     st.markdown(
         """
         <div class="hero-card">
-            <div class="hero-pill">🦟 Cebu City Dengue Forecasting App</div>
+            <div class="hero-pill">🦟 Cebu City barangay-level decision-support app</div>
             <h1 class="hero-title">
-                <span class="hero-purple">View</span>
-                <span class="hero-red">dengue forecasts</span>
-                <span class="hero-purple">across</span>
-                <span class="hero-gradient">all planning horizons.</span>
+                <span class="hero-red">Dengue</span>
+                <span class="hero-gradient">Risk Mapping and Early Warning System in Cebu City</span>
             </h1>
             <div class="hero-subtitle">
-                Select an origin week and prediction mode, then click Predict. The app reads the saved CSV outputs
-                and displays barangay intensity maps across forecast horizons: selected week, +1, +2, +3, +4, +8, and +12 weeks.
+                A clean, barangay-level dashboard for reading dengue risk signals, citywide case ranges, and localized preparedness priorities across short-term planning windows.
+            </div>
+            <div class="disclaimer-card">
+                <span>⚠️</span>
+                <span>These predictions are not perfect and should not be used as official outbreak declarations. Use them as a guide together with actual health reports, field validation, and public health judgment.</span>
             </div>
             <div class="chip-row">
-                <div class="chip">Barangay shapefile map</div>
-                <div class="chip">Citywide forecast</div>
-                <div class="chip">All horizon tabs</div>
-                <div class="chip">Predicted case ranges</div>
-                <div class="chip">Alert levels</div>
-                <div class="chip">Predict button workflow</div>
+                <a class="chip chip-scroll" href="#rationale-section" data-target="rationale-section">Rationale</a>
+                <a class="chip chip-scroll" href="#methods-section" data-target="methods-section">Methods</a>
+                <a class="chip chip-scroll" href="#prediction-results" data-target="prediction-results">Predicted cases</a>
+                <a class="chip chip-scroll" href="#prediction-results" data-target="prediction-results">Barangay map</a>
+                <a class="chip chip-scroll" href="#accuracy-section" data-target="accuracy-section">Accuracy check</a>
+                <a class="chip chip-scroll" href="#limitations-section" data-target="limitations-section">Limitations</a>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-
 # ============================================================
 # MAIN APP
 # ============================================================
 
 hero()
+activate_navigation_chips()
+render_rationale_and_methods()
 
 forecasts = load_all_forecasts()
 shape_gdf = load_barangay_shapefile()
+actual_cases_df = load_actual_case_data(str(DATASET_PATH))
 
 if "forecast_loaded" not in st.session_state:
     st.session_state["forecast_loaded"] = False
@@ -1664,15 +3191,39 @@ with st.sidebar:
     st.markdown(
         """
         <div class="sidebar-title-card">
-            <div class="sidebar-title">Forecast Command Center</div>
+            <div class="sidebar-title">Dengue Risk Mapping and Early Warning System in Cebu City</div>
             <div class="sidebar-subtitle">
-                Choose a saved model mode and origin week, then press Predict to display the saved forecast outputs.
+                Choose a model and origin week. The prediction section will open automatically after you press Predict.
+            </div>
+            <div class="sidebar-disclaimer">
+                Predictions are estimates only. Use them as a preparedness guide, not as a replacement for official surveillance or field validation.
             </div>
             <div class="game-chip-row">
-                <span class="game-chip">CSV</span>
-                <span class="game-chip">2025–2026</span>
-                <span class="game-chip">PREDICT</span>
+                <span class="game-chip">ISO WEEK</span>
+                <span class="game-chip">MAP</span>
+                <span class="game-chip">EARLY WARNING</span>
             </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div class="iso-card">
+            <div class="mini-label">What week is today?</div>
+            <div class="small-note">Use this if you know the date but not the epidemiological/ISO week.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    date_to_convert = st.date_input("Date to convert", value=dt.date.today())
+    iso_year, iso_week, iso_day = date_to_convert.isocalendar()
+    st.markdown(
+        f"""
+        <div class="iso-result">
+            <span>{date_to_convert.strftime('%b %d, %Y')}</span>
+            <span>ISO {iso_year} W{iso_week:02d}</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1723,6 +3274,7 @@ with st.sidebar:
             )
             if predict_clicked:
                 st.session_state["forecast_loaded"] = True
+                st.session_state["scroll_to_predictions"] = True
 
     outputs_found = bool(available_modes)
     shape_found = SHAPE_ZIP_PATH.exists()
@@ -1771,7 +3323,7 @@ if not st.session_state.get("forecast_loaded", False):
             "After prediction, use the tabs to compare barangay intensity per horizon.",
         )
 
-    st.info("Click **Predict Dengue Cases** in the sidebar to show the barangay intensity maps and citywide forecasts.")
+    st.info("Use the sidebar to choose a model and origin week, then click **Predict Dengue Cases**. The app will jump to the predicted cases and barangay risk map section automatically.")
     st.stop()
 
 # Filter to selected origin week, then show all requested horizons.
@@ -1810,6 +3362,21 @@ origin_city = add_city_display_columns(origin_city)
 available_horizons = sorted(set(origin_city["horizon"].unique()).intersection(set(origin_barangay["horizon"].unique())))
 available_horizons = [h for h in DISPLAY_HORIZONS if h in available_horizons]
 
+st.markdown('<div id="prediction-results" class="scroll-anchor"></div>', unsafe_allow_html=True)
+if st.session_state.pop("scroll_to_predictions", False):
+    scroll_to_prediction_results()
+
+st.markdown('<div class="section-title">Predicted cases and barangay risk map</div>', unsafe_allow_html=True)
+st.markdown(
+    """
+    <div class="small-note" style="margin-bottom:1rem; max-width:1000px;">
+        Read the numbers as estimated case ranges and preparedness signals. The map helps answer: which barangays should be checked first?
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+render_alert_legend()
+
 col_a, col_b, col_c = st.columns(3)
 with col_a:
     render_metric_card(
@@ -1830,7 +3397,7 @@ with col_c:
         "Selected week, 1 week from now, and later planning windows up to 12 weeks.",
     )
 
-st.markdown('<div class="section-title">Forecast summary</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">Citywide forecast summary</div>', unsafe_allow_html=True)
 
 summary_table = origin_city[[
     "horizon", "target_year", "target_week", "predicted_case_range", "probability_display", "alert_level", "range_basis"
@@ -1849,6 +3416,10 @@ render_pretty_table(summary_table, max_rows=20)
 if not available_horizons:
     st.warning("The selected origin week exists, but none of the display horizons are available in both city and barangay CSVs.")
     st.stop()
+
+# Accuracy check output is shown inside each forecast horizon tab before the small
+# barangay prediction table. This anchor lets the top navigation jump to that area.
+st.markdown('<div id="accuracy-section" class="scroll-anchor"></div>', unsafe_allow_html=True)
 
 # Always show the full horizon navigation requested by the app design.
 # If one horizon is unexpectedly missing from the CSV, its tab will explain it
@@ -1954,7 +3525,10 @@ for tab, horizon in zip(tabs, DISPLAY_HORIZONS):
             st_folium(prediction_map, width=None, height=690, returned_objects=[])
             st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown("#### Barangay prediction table")
+        st.markdown("#### Accuracy check against actual reported cases")
+        render_accuracy_check_for_horizon(barangay_rows, city_row, actual_cases_df, horizon)
+
+        st.markdown("#### Top 3 highest-risk barangays")
         table = barangay_rows[[
             "barangay", "predicted_cases_display", "predicted_case_range", "range_basis",
             "probability_display", "alert_level", "alert_rank", "predicted_cases",
@@ -1969,15 +3543,23 @@ for tab, horizon in zip(tabs, DISPLAY_HORIZONS):
             "probability_display": "Outbreak probability",
             "alert_level": "Alert level",
         })
-        render_pretty_table(table)
+        render_top_risk_cards(table, count=3)
+        prediction_csv = table.to_csv(index=False).encode("utf-8-sig")
+        st.download_button(
+            "Download full barangay prediction table CSV",
+            data=prediction_csv,
+            file_name=f"barangay_predictions_{mode_short_label(selected_mode).replace(' ', '_').lower()}_{target_year}_W{target_week}_H{int(horizon)}.csv",
+            mime="text/csv",
+            use_container_width=True,
+            key=f"prediction_download_{selected_mode}_{target_year}_{target_week}_{int(horizon)}",
+        )
 
-        st.markdown("#### Barangay recommended interventions")
-        selected_alert = str(top_row["alert_level"])
-        st.caption(f"Shown for the highest current alert level in this horizon: {selected_alert}")
-        for item in get_intervention_plan(selected_alert):
-            st.markdown(f"- {item}")
+
+render_limitations_and_actions()
+render_proponents()
+render_references()
 
 st.markdown(
-    '<div class="footer-note">Cebu City Dengue Early Warning System · CSV-loaded forecasts for planning support</div>',
+    '<div class="footer-note">Dengue Risk Mapping and Early Warning System in Cebu City · Predictions are planning guides, not official outbreak declarations.</div>',
     unsafe_allow_html=True,
 )
