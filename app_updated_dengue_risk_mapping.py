@@ -2529,7 +2529,7 @@ def render_accuracy_check(origin_barangay: pd.DataFrame, origin_city: pd.DataFra
                 <span class="accuracy-pill">⚠️ False warning</span>
                 <span class="accuracy-pill">❌ Missed outbreak</span>
                 <span class="accuracy-pill">✅ Correct low</span>
-                <div class="accuracy-note">Actual outbreak is checked using the forecast CSV's alert threshold when available. If no threshold column exists, the app falls back to at least 1 reported case. Overall accuracy is computed as (true positives + true negatives) ÷ 80 barangays.</div>
+                <div class="accuracy-note">Actual outbreak is checked using the forecast CSV's alert threshold when available. If no threshold column exists, the app falls back to at least 1 reported case. Overall accuracy is computed as (true positives + true negatives) ÷ 80 barangays. False warning rate is computed as false outbreak-level alerts ÷ actual non-outbreak barangays.</div>
             </div>
         </section>
         """,
@@ -2570,6 +2570,7 @@ def render_accuracy_check(origin_barangay: pd.DataFrame, origin_city: pd.DataFra
         recall = safe_rate(tp, tp + fn)
         f1 = None if precision is None or recall is None or (precision + recall) == 0 else 2 * precision * recall / (precision + recall)
         overall_accuracy = warning_accuracy_percent(tp, tn, 80)
+        false_warning_rate = safe_rate(fp, fp + tn)
         mae = compare["absolute_error"].mean()
         within_share = compare["actual_within_range"].mean()
         actual_city_cases = compare["actual_cases"].sum()
@@ -2587,6 +2588,7 @@ def render_accuracy_check(origin_barangay: pd.DataFrame, origin_city: pd.DataFra
             "missed_outbreaks": fn,
             "correct_lows": tn,
             "Overall accuracy": fmt_rate(overall_accuracy),
+            "False warning rate": fmt_rate(false_warning_rate),
             "Precision": fmt_rate(precision),
             "Recall": fmt_rate(recall),
             "F1": fmt_rate(f1),
@@ -2639,7 +2641,7 @@ def render_accuracy_check(origin_barangay: pd.DataFrame, origin_city: pd.DataFra
     summary_display = summary_df[[
         "Forecast horizon", "Target week", "Actual city cases", "Predicted city range",
         "City abs. error", "correct_warnings", "false_warnings", "missed_outbreaks",
-        "correct_lows", "Overall accuracy", "Precision", "Recall", "F1", "Barangay MAE", "Within range",
+        "correct_lows", "Overall accuracy", "False warning rate", "Precision", "Recall", "F1", "Barangay MAE", "Within range",
     ]].rename(columns={
         "correct_warnings": "Correct warnings",
         "false_warnings": "False warnings",
@@ -2725,7 +2727,7 @@ def render_accuracy_check_for_horizon(
             <div class="mini-label">Accuracy check · {html.escape(forecast_label_from_horizon(horizon))} · {target_year} W{target_week}</div>
             <div class="accuracy-note">
                 Strict outbreak accuracy counts <b>Moderate, High, and Very High</b> as predicted outbreak-level alerts.
-                Early caution capture counts <b>Watch/Warning and above</b> as useful monitoring signals. This keeps the app fair: Watch is not treated as an outbreak declaration, but it is still recognized when it helps flag a barangay that later had an actual outbreak.
+                Early caution capture counts <b>Watch/Warning and above</b> as useful monitoring signals. This keeps the app fair: Watch is not treated as an outbreak declaration, but it is still recognized when it helps flag a barangay that later had an actual outbreak. False warning rate shows how often the model raised an outbreak-level alert in barangays that did not actually reach the outbreak threshold.
             </div>
         </div>
         """,
@@ -2751,6 +2753,7 @@ def render_accuracy_check_for_horizon(
     actual_outbreaks = int(compare["actual_outbreak"].sum())
     strict_precision = safe_rate(tp, tp + fp)
     strict_recall = safe_rate(tp, tp + fn)
+    false_warning_rate = safe_rate(fp, fp + tn)
     overall_accuracy = warning_accuracy_percent(tp, tn, 80)
 
     caution_hits = int(((compare["predicted_caution"]) & (compare["actual_outbreak"])).sum())
@@ -2762,21 +2765,23 @@ def render_accuracy_check_for_horizon(
     predicted_city_cases = float(city_row.get("predicted_cases", 0))
     city_abs_error = abs(predicted_city_cases - actual_city_cases)
 
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
     with c1:
         st.metric("Overall accuracy", fmt_rate(overall_accuracy))
     with c2:
         st.metric("Strict outbreak capture", fmt_rate(strict_recall))
     with c3:
-        st.metric("Early caution capture", fmt_rate(caution_capture))
+        st.metric("False warning rate", fmt_rate(false_warning_rate))
     with c4:
-        st.metric("Missed outbreaks", fn)
+        st.metric("Early caution capture", fmt_rate(caution_capture))
     with c5:
+        st.metric("Missed outbreaks", fn)
+    with c6:
         st.metric("Barangay MAE", fmt_number(barangay_mae, 2))
 
     st.caption(
         f"Overall accuracy includes correct non-outbreak barangays: ({tp} true positives + {tn} true negatives) / 80 = {fmt_rate(overall_accuracy)}. "
-        f"Strict alerts: TP={tp}, FP={fp}, FN={fn}, TN={tn}. "
+        f"Strict alerts: TP={tp}, FP={fp}, FN={fn}, TN={tn}; false warning rate = FP / (FP + TN) = {fmt_rate(false_warning_rate)}. "
         f"Early caution captured {caution_hits}/{actual_outbreaks} actual outbreak barangays; {caution_misses} had no caution signal. "
         f"Citywide actual cases={actual_city_cases}; predicted={fmt_number(predicted_city_cases, 1)}; absolute error={fmt_number(city_abs_error, 1)}."
     )
